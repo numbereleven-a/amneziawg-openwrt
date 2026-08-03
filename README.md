@@ -39,3 +39,8 @@ reboot
 The packages are built by
 [the MediaTek Filogic release workflow](.github/workflows/build-filogic-release.yml)
 from the current [upstream project](https://github.com/this-username-has-been-taken/amneziawg-openwrt).
+
+## Download
+
+[![release](https://img.shields.io/badge/release-v3.0.0-008acb)](../../releases/latest)
+[![downloads](https://img.shields.io/github/downloads/numbereleven-a/amneziawg-openwrt/total?label=downloads&color=7f8f18)](../../releases)
