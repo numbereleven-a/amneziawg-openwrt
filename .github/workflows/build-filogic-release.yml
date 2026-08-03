@@ -1,0 +1,128 @@
+name: Build MediaTek Filogic release
+
+on:
+  workflow_dispatch:
+    inputs:
+      openwrt_version:
+        description: "Exact OpenWrt release"
+        type: choice
+        required: true
+        options:
+          - "24.10.1"
+          - "23.05.5"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: filogic-${{ inputs.openwrt_version }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-publish:
+    name: "OpenWrt ${{ inputs.openwrt_version }} / mediatek/filogic"
+    runs-on: ubuntu-24.04
+    env:
+      OPENWRT_VERSION: ${{ inputs.openwrt_version }}
+      OPENWRT_TARGET: mediatek
+      OPENWRT_SUBTARGET: filogic
+      OPENWRT_ARCH: aarch64_cortex-a53
+      AWG_VERSION: "3.0.0"
+    steps:
+      - name: Checkout package source
+        uses: actions/checkout@v5
+        with:
+          path: amneziawg
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y python3-pyelftools python3-dev python3-setuptools swig
+
+      - name: Download and prepare the exact OpenWrt SDK
+        run: |
+          set -euo pipefail
+          base_url="https://downloads.openwrt.org/releases/${OPENWRT_VERSION}/targets/${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}/"
+          sdk_name="$(curl -fsSL "$base_url" | grep -oP 'href="openwrt-sdk[^"]+\.tar\.(zst|xz)"' | sed -e 's/href="//' -e 's/"$//' | head -n1)"
+          test -n "$sdk_name"
+          curl -fsSLO "${base_url}${sdk_name}"
+          tar -xf "$sdk_name"
+          mv openwrt-sdk* openwrt
+
+          echo "src-cpy awgopenwrt ../amneziawg" >> openwrt/feeds.conf.default
+          ./openwrt/scripts/feeds update -a
+          curl -fsSL "${base_url}config.buildinfo" > openwrt/.config
+          cat >> openwrt/.config <<'EOF'
+          CONFIG_PACKAGE_kmod-crypto-lib-chacha20=y
+          CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=y
+          CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=y
+          CONFIG_PACKAGE_kmod-amneziawg=y
+          CONFIG_PACKAGE_amneziawg-tools=y
+          CONFIG_PACKAGE_luci-proto-amneziawg=y
+          EOF
+          ./openwrt/scripts/feeds install -a
+          make -C openwrt defconfig
+
+      - name: Compile packages
+        run: |
+          set -euo pipefail
+          make -C openwrt package/kmod-amneziawg/{clean,download,prepare,compile} -j "$(nproc)"
+          make -C openwrt package/amneziawg-tools/{clean,download,prepare,compile} -j "$(nproc)"
+          make -C openwrt package/luci-proto-amneziawg/{clean,download,prepare,compile} -j "$(nproc)"
+
+      - name: Verify and package artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p dist/package
+          find "openwrt/bin/targets/${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}/packages" \
+            -maxdepth 1 -type f -name 'kmod-amneziawg*.ipk' -exec cp {} dist/package/ \;
+          find "openwrt/bin/packages/${OPENWRT_ARCH}/awgopenwrt" \
+            -maxdepth 1 -type f -name '*.ipk' -exec cp {} dist/package/ \;
+
+          for package in kmod-amneziawg amneziawg-tools luci-proto-amneziawg; do
+            find dist/package -maxdepth 1 -type f -name "${package}*.ipk" | grep -q . || {
+              echo "Missing package: $package"
+              exit 1
+            }
+          done
+
+          vermagic="$(find openwrt/build_dir -maxdepth 4 -type f -name vermagic -print -quit)"
+          {
+            echo "AmneziaWG version: ${AWG_VERSION}"
+            echo "OpenWrt version: ${OPENWRT_VERSION}"
+            echo "Target: ${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}"
+            echo "Architecture: ${OPENWRT_ARCH}"
+            echo "Vermagic: $([ -n "$vermagic" ] && cat "$vermagic" || echo unknown)"
+            echo "Built at: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          } > dist/package/build-info.txt
+          (cd dist/package && sha256sum -- *.ipk build-info.txt > SHA256SUMS)
+
+          archive="amneziawg-${AWG_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}-${OPENWRT_ARCH}-openwrt-${OPENWRT_VERSION}.tar.gz"
+          tar -czf "dist/${archive}" -C dist/package .
+          sha256sum "dist/${archive}" > "dist/${archive}.sha256"
+
+      - name: Publish version-specific release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="v${AWG_VERSION}-openwrt-${OPENWRT_VERSION}-${OPENWRT_TARGET}-${OPENWRT_SUBTARGET}"
+          title="AmneziaWG ${AWG_VERSION} for OpenWrt ${OPENWRT_VERSION} (MediaTek Filogic)"
+          notes_file="$(mktemp)"
+          cat > "$notes_file" <<EOF
+          AmneziaWG ${AWG_VERSION} packages built with the official OpenWrt ${OPENWRT_VERSION}
+          SDK for \`${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}\` and \`${OPENWRT_ARCH}\`.
+
+          The archive contains the kernel module, command-line tools, LuCI protocol package,
+          available localization packages, build metadata, and checksums. The kernel module
+          requires the matching kernel ABI from this exact OpenWrt release.
+          EOF
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release upload "$tag" dist/*.tar.gz dist/*.sha256 --clobber
+            gh release edit "$tag" --title "$title" --notes-file "$notes_file"
+          else
+            gh release create "$tag" dist/*.tar.gz dist/*.sha256 \
+              --target "$GITHUB_SHA" --title "$title" --notes-file "$notes_file"
+          fi

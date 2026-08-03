@@ -1,5 +1,22 @@
 # YAAWG: Yet another AmneziaWG variation for OpenWrt
 
+## Ready-to-install AmneziaWG 3 packages for MediaTek Filogic
+
+These releases are built specifically for `mediatek/filogic` routers with the
+`aarch64_cortex-a53` package architecture:
+
+| Router / firmware | Packages |
+| --- | --- |
+| OpenWrt 24.10.1 (`r28597-0425664679`) | [Download the OpenWrt 24.10.1 release](../../releases/tag/v3.0.0-openwrt-24.10.1-mediatek-filogic) |
+| ASUS RT-AX59U, OpenWrt 23.05.5 (`r24106-10cc5fcd00`) | [Download the OpenWrt 23.05.5 release](../../releases/tag/v3.0.0-openwrt-23.05.5-mediatek-filogic) |
+
+Each archive contains `kmod-amneziawg`, `amneziawg-tools`,
+`luci-proto-amneziawg`, the Russian LuCI localization package when produced by
+the SDK, `build-info.txt`, and `SHA256SUMS`. The kernel package is tied to the
+kernel ABI of the exact official OpenWrt release shown in the table; do not use
+it with a different OpenWrt version or a custom firmware build with a different
+kernel ABI.
+
 ## FAQ & TL;DR
 
 **Q: Where can I get the binaries?**  
