@@ -48,6 +48,7 @@ jobs:
           test -n "$sdk_name"
           curl -fsSLO "${base_url}${sdk_name}"
           tar -xf "$sdk_name"
+          rm -f "$sdk_name"
           mv openwrt-sdk* openwrt
 
           echo "src-cpy awgopenwrt ../amneziawg" >> openwrt/feeds.conf.default
