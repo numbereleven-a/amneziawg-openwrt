@@ -36,19 +36,6 @@ opkg install ./kmod-amneziawg_*.ipk \
 reboot
 ```
 
-Existing interfaces in `/etc/config/network` are preserved during the package
-upgrade.
-
-After reboot, verify the installation and an interface named `warp` with:
-
-```sh
-awg --version
-opkg list-installed | grep amneziawg
-ubus call network.interface.warp status
-curl checkip.amazonaws.com
-curl --interface warp checkip.amazonaws.com
-```
-
 The packages are built by
 [the MediaTek Filogic release workflow](.github/workflows/build-filogic-release.yml)
 from the current [upstream project](https://github.com/this-username-has-been-taken/amneziawg-openwrt).
