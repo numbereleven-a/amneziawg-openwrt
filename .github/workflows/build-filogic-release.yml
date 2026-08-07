@@ -27,7 +27,7 @@ jobs:
       OPENWRT_TARGET: mediatek
       OPENWRT_SUBTARGET: filogic
       OPENWRT_ARCH: aarch64_cortex-a53
-      AWG_VERSION: "3.0.0"
+      AWG_VERSION: "3.0.1"
     steps:
       - name: Checkout package source
         uses: actions/checkout@v5

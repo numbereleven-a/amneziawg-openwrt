@@ -6,8 +6,8 @@ firmware releases. Both builds target `mediatek/filogic` with the
 
 | Firmware | Download |
 | --- | --- |
-| OpenWrt 24.10.1 (`r28597-0425664679`) | [Download](../../releases/tag/v3.0.0-openwrt-24.10.1-mediatek-filogic) |
-| OpenWrt 23.05.5 (`r24106-10cc5fcd00`) | [Download](../../releases/tag/v3.0.0-openwrt-23.05.5-mediatek-filogic) |
+| OpenWrt 24.10.1 (`r28597-0425664679`) | [Download](../../releases/tag/v3.0.1-openwrt-24.10.1-mediatek-filogic) |
+| OpenWrt 23.05.5 (`r24106-10cc5fcd00`) | [Download](../../releases/tag/v3.0.1-openwrt-23.05.5-mediatek-filogic) |
 
 Each archive contains:
 
@@ -42,5 +42,5 @@ from the current [upstream project](https://github.com/this-username-has-been-ta
 
 ## Download
 
-[![release](https://img.shields.io/badge/release-v3.0.0-008acb)](../../releases/latest)
+[![release](https://img.shields.io/badge/release-v3.0.1-008acb)](../../releases/latest)
 [![downloads](https://img.shields.io/github/downloads/numbereleven-a/amneziawg-openwrt/total?label=downloads&color=7f8f18)](../../releases)
