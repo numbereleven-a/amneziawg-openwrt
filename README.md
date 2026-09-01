@@ -23,17 +23,20 @@ different kernel ABI.
 
 ## Installation and upgrade
 
-Extract the archive and copy all four `.ipk` files to the device. Use the
-archive that matches the exact OpenWrt release and kernel ABI. Do not remove
-`luci-app-amneziawg`; this package set uses `luci-proto-amneziawg` for LuCI.
-When upgrading from AmneziaWG 3.0, install the complete package set:
+Extract the archive and copy the three required `.ipk` files to the device.
+The Russian LuCI localization is optional. Use the archive that matches the
+exact OpenWrt release and kernel ABI. Do not remove `luci-app-amneziawg`; this
+package set uses `luci-proto-amneziawg` for LuCI. When upgrading from
+AmneziaWG 3.0, install the required package set:
 
 ```sh
 opkg install --force-reinstall \
   ./kmod-amneziawg_*.ipk \
   ./amneziawg-tools_*.ipk \
-  ./luci-proto-amneziawg_*.ipk \
-  ./luci-i18n-amneziawg-ru_*.ipk
+  ./luci-proto-amneziawg_*.ipk
+
+# Optional Russian LuCI localization:
+opkg install --force-reinstall ./luci-i18n-amneziawg-ru_*.ipk
 
 /etc/init.d/network restart
 ```
