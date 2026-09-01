@@ -27,7 +27,7 @@ jobs:
       OPENWRT_TARGET: mediatek
       OPENWRT_SUBTARGET: filogic
       OPENWRT_ARCH: aarch64_cortex-a53
-      AWG_VERSION: "3.1.0"
+      AWG_VERSION: "3.1.1"
     steps:
       - name: Checkout package source
         uses: actions/checkout@v5
@@ -113,15 +113,34 @@ jobs:
           title="AmneziaWG ${AWG_VERSION} for OpenWrt ${OPENWRT_VERSION} (MediaTek Filogic)"
           notes_file="$(mktemp)"
           cat > "$notes_file" <<EOF
-          AmneziaWG ${AWG_VERSION} packages built with the official OpenWrt ${OPENWRT_VERSION}
-          SDK for \`${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}\` and \`${OPENWRT_ARCH}\`.
+          ## Changelog
 
-          AmneziaWG 3.1 adds the RandomTrailers and DisableCookies parameters,
-          with matching kernel, userspace tools, and LuCI support.
+          Compared with 3.1.0, the package set was updated to AmneziaWG 3.1.1.
 
-          The archive contains the kernel module, command-line tools, LuCI protocol package,
-          available localization packages, build metadata, and checksums. The kernel module
-          requires the matching kernel ABI from this exact OpenWrt release.
+          ### Kernel module
+
+          - initialized \`header_protection.lock\` and corrected write locking in \`set_key\`;
+          - replaced \`strncpy\` with \`strscpy\` in netlink handling;
+          - fixed compatibility with newer kernels;
+          - passed \`WQ_PERCPU\` to avoid kernel 7.2 warnings;
+          - fixed UDP-window handling for \`RandomPaddingAddition\`;
+          - disabled the whole underload when \`DisableCookies\` is enabled.
+
+          ### Userspace
+
+          - synchronized \`amneziawg-go\` with the corresponding upstream fixes;
+          - updated \`amneziawg-tools\` to 3.1.1;
+          - updated \`luci-proto-amneziawg\` to 3.1.1.
+
+          ### Build details
+
+          Packages were built with the official OpenWrt ${OPENWRT_VERSION} SDK for
+          \`${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}\` and \`${OPENWRT_ARCH}\`.
+
+          The archive contains the kernel module, userspace tools, LuCI protocol package,
+          Russian localization, build metadata, and SHA-256 checksums.
+
+          The kernel module requires the exact kernel ABI of OpenWrt ${OPENWRT_VERSION}.
           EOF
 
           if gh release view "$tag" >/dev/null 2>&1; then
