@@ -52,7 +52,7 @@ jobs:
           mv openwrt-sdk* openwrt
 
           echo "src-cpy awgopenwrt ../amneziawg" >> openwrt/feeds.conf.default
-          ./openwrt/scripts/feeds update base packages luci
+          ./openwrt/scripts/feeds update base packages luci awgopenwrt
           curl -fsSL "${base_url}config.buildinfo" > openwrt/.config
           cp openwrt/.config openwrt/.config.full-buildinfo
           sed -i -E '/^(# )?CONFIG_PACKAGE_[^ ]+(=| is not set)/d; /^(# )?CONFIG_ALL(_KMODS|_NONSHARED)?(=| is not set)/d' openwrt/.config
