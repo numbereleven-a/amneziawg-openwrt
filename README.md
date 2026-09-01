@@ -23,18 +23,22 @@ different kernel ABI.
 
 ## Installation and upgrade
 
-Extract the archive and copy the `.ipk` files to the device. If the old
-`luci-app-amneziawg` package is installed, remove it first because it has been
-replaced by `luci-proto-amneziawg` and owns the same LuCI files:
+Extract the archive and copy all four `.ipk` files to the device. Use the
+archive that matches the exact OpenWrt release and kernel ABI. Do not remove
+`luci-app-amneziawg`; this package set uses `luci-proto-amneziawg` for LuCI.
+When upgrading from AmneziaWG 3.0, install the complete package set:
 
 ```sh
-opkg remove luci-app-amneziawg
-opkg install ./kmod-amneziawg_*.ipk \
+opkg install --force-reinstall \
+  ./kmod-amneziawg_*.ipk \
   ./amneziawg-tools_*.ipk \
   ./luci-proto-amneziawg_*.ipk \
   ./luci-i18n-amneziawg-ru_*.ipk
-reboot
+
+/etc/init.d/network restart
 ```
+
+A full router reboot is optional after the network restart.
 
 The packages are built by
 [the MediaTek Filogic release workflow](.github/workflows/build-filogic-release.yml)
