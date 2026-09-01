@@ -27,7 +27,7 @@ jobs:
       OPENWRT_TARGET: mediatek
       OPENWRT_SUBTARGET: filogic
       OPENWRT_ARCH: aarch64_cortex-a53
-      AWG_VERSION: "3.1.0"
+      AWG_VERSION: "3.1.1"
     steps:
       - name: Checkout package source
         uses: actions/checkout@v5
@@ -52,8 +52,10 @@ jobs:
           mv openwrt-sdk* openwrt
 
           echo "src-cpy awgopenwrt ../amneziawg" >> openwrt/feeds.conf.default
-          ./openwrt/scripts/feeds update -a
+          ./openwrt/scripts/feeds update base packages luci
           curl -fsSL "${base_url}config.buildinfo" > openwrt/.config
+          cp openwrt/.config openwrt/.config.full-buildinfo
+          sed -i -E '/^(# )?CONFIG_PACKAGE_[^ ]+(=| is not set)/d; /^(# )?CONFIG_ALL(_KMODS|_NONSHARED)?(=| is not set)/d' openwrt/.config
           cat >> openwrt/.config <<'EOF'
           CONFIG_PACKAGE_kmod-crypto-lib-chacha20=y
           CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=y
@@ -61,9 +63,25 @@ jobs:
           CONFIG_PACKAGE_kmod-amneziawg=y
           CONFIG_PACKAGE_amneziawg-tools=y
           CONFIG_PACKAGE_luci-proto-amneziawg=y
+          CONFIG_LUCI_LANG_ru=y
           EOF
           ./openwrt/scripts/feeds install -a
           make -C openwrt defconfig
+          if grep -qE '^CONFIG_ALL(_KMODS|_NONSHARED)?=y' openwrt/.config; then
+            sed -i -E '/^(# )?CONFIG_PACKAGE_[^ ]+(=| is not set)/d; /^(# )?CONFIG_ALL(_KMODS|_NONSHARED)?(=| is not set)/d; /^(# )?CONFIG_LUCI_LANG_ru(=| is not set)/d' openwrt/.config
+            printf '%s\n' \
+              '# CONFIG_ALL is not set' \
+              '# CONFIG_ALL_KMODS is not set' \
+              '# CONFIG_ALL_NONSHARED is not set' \
+              'CONFIG_PACKAGE_kmod-crypto-lib-chacha20=y' \
+              'CONFIG_PACKAGE_kmod-crypto-lib-chacha20poly1305=y' \
+              'CONFIG_PACKAGE_kmod-crypto-chacha20poly1305=y' \
+              'CONFIG_PACKAGE_kmod-amneziawg=y' \
+              'CONFIG_PACKAGE_amneziawg-tools=y' \
+              'CONFIG_PACKAGE_luci-proto-amneziawg=y' \
+              'CONFIG_PACKAGE_luci-i18n-amneziawg-ru=y' \
+              'CONFIG_LUCI_LANG_ru=y' >> openwrt/.config
+          fi
 
       - name: Compile packages
         run: |
@@ -81,7 +99,7 @@ jobs:
           find "openwrt/bin/packages/${OPENWRT_ARCH}/awgopenwrt" \
             -maxdepth 1 -type f -name '*.ipk' -exec cp {} dist/package/ \;
 
-          for package in kmod-amneziawg amneziawg-tools luci-proto-amneziawg; do
+          for package in kmod-amneziawg amneziawg-tools luci-proto-amneziawg luci-i18n-amneziawg-ru; do
             find dist/package -maxdepth 1 -type f -name "${package}*.ipk" | grep -q . || {
               echo "Missing package: $package"
               exit 1
@@ -113,11 +131,49 @@ jobs:
           title="AmneziaWG ${AWG_VERSION} for OpenWrt ${OPENWRT_VERSION} (MediaTek Filogic)"
           notes_file="$(mktemp)"
           cat > "$notes_file" <<EOF
-          AmneziaWG ${AWG_VERSION} packages built with the official OpenWrt ${OPENWRT_VERSION}
-          SDK for \`${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}\` and \`${OPENWRT_ARCH}\`.
+          # Changelog
+          AmneziaWG 3.1 support.
+          Below you will find pre-built binaries for various architectures.
 
-          AmneziaWG 3.1 adds the RandomTrailers and DisableCookies parameters,
-          with matching kernel, userspace tools, and LuCI support.
+          ## workflows:
+
+            * fix Go version SDK overriding (override only when it is too old)
+            * fix vermagic calculation and unify build-info.txt artifact
+
+          ## kmod-amneziawg:
+
+          Sync with upstream to address the following issues:
+
+            * fix: initialize header_protection.lock, use down_write in set_key
+            * socket, compat: fix build with kernel 7.1.5+
+            * netlink: use strscpy instead of strncpy
+            * device: pass WQ_PERCPU to avoid splat on kernel 7.2
+            * fix: use udp window for RandomPaddingAddition
+            * fix: disable the whole underload if DisableCookies is on
+
+          ## amneziawg-go:
+
+          Sync with upstream to address the following issues:
+
+            * fix: disable the whole underload if DisableCookies is on
+            * fix: use udp window for RandomPaddingAddition
+
+          ## amneziawg-tools:
+
+            * bump version
+
+          ## luci-proto-amneziawg:
+
+            * bump version
+
+          ## readme:
+
+            * update readme
+
+          ## Build details
+
+          These packages were built with the official OpenWrt ${OPENWRT_VERSION} SDK
+          for \`${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}\` and \`${OPENWRT_ARCH}\`.
 
           The archive contains the kernel module, command-line tools, LuCI protocol package,
           available localization packages, build metadata, and checksums. The kernel module
