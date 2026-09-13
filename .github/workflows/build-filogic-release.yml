@@ -27,7 +27,7 @@ jobs:
       OPENWRT_TARGET: mediatek
       OPENWRT_SUBTARGET: filogic
       OPENWRT_ARCH: aarch64_cortex-a53
-      AWG_VERSION: "3.1.0"
+      AWG_VERSION: "3.1.2"
     steps:
       - name: Checkout package source
         uses: actions/checkout@v5
@@ -116,8 +116,10 @@ jobs:
           AmneziaWG ${AWG_VERSION} packages built with the official OpenWrt ${OPENWRT_VERSION}
           SDK for \`${OPENWRT_TARGET}/${OPENWRT_SUBTARGET}\` and \`${OPENWRT_ARCH}\`.
 
-          AmneziaWG 3.1 adds the RandomTrailers and DisableCookies parameters,
-          with matching kernel, userspace tools, and LuCI support.
+          AmneziaWG 3.1.2 includes the upstream fix that avoids adding random
+          trailers to I1-I5 and dummy junk packets. It also includes the
+          RandomTrailers and DisableCookies parameters with matching kernel,
+          userspace tools, and LuCI support.
 
           The archive contains the kernel module, command-line tools, LuCI protocol package,
           available localization packages, build metadata, and checksums. The kernel module
